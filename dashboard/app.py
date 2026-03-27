@@ -2,67 +2,132 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Page title
-st.title("India Air Pollution Dashboard")
+st.title("Air Pollution Analysis Dashboard")
 
-# Load dataset
-city_day = pd.read_csv("data/city_day.csv")
+# Load cleaned datasets
+city_day = pd.read_csv("data/clean_city_data.csv")
+station_full = pd.read_csv("data/clean_station_data.csv")
 
-# Convert date column
 city_day["Date"] = pd.to_datetime(city_day["Date"])
 
-# Sidebar filter
-st.sidebar.header("Filter Options")
+# Sidebar filters
+st.sidebar.header("Filters")
 
-selected_city = st.sidebar.selectbox(
-    "Select City",
-    sorted(city_day["City"].dropna().unique())
+cities = st.sidebar.multiselect(
+    "Select Cities",
+    city_day["City"].unique(),
+    default=city_day["City"].unique()
 )
 
-# Filter dataset
-filtered_data = city_day[city_day["City"] == selected_city]
+filtered = city_day[city_day["City"].isin(cities)]
 
-st.subheader(f"Air Quality Data for {selected_city}")
+# Overview Metrics
+st.subheader("Overview")
 
-# Show dataset preview
-st.write(filtered_data.head())
+col1, col2, col3 = st.columns(3)
+
+col1.metric("Average AQI", round(filtered["AQI"].mean(),2))
+col2.metric("Maximum AQI", round(filtered["AQI"].max(),2))
+col3.metric("Cities", filtered["City"].nunique())
 
 # AQI Trend
 st.subheader("AQI Trend Over Time")
 
-fig1 = px.line(
-    filtered_data,
+fig = px.line(
+    filtered,
     x="Date",
     y="AQI",
-    title="AQI Trend"
+    color="City"
 )
 
-st.plotly_chart(fig1)
+st.plotly_chart(fig, use_container_width=True)
 
-# Pollutant comparison
-st.subheader("Pollutant Levels Over Time")
+# AQI Category Distribution
+st.subheader("AQI Category Distribution")
 
-pollutants = ["PM2.5","PM10","NO2","CO","SO2","O3"]
-
-fig2 = px.line(
-    filtered_data,
-    x="Date",
-    y=pollutants,
-    title="Pollutant Trends"
+fig2 = px.histogram(
+    filtered,
+    x="AQI_Category",
+    color="AQI_Category"
 )
 
-st.plotly_chart(fig2)
+st.plotly_chart(fig2, use_container_width=True)
 
-# Average AQI by city
-st.subheader("Average AQI by City")
+# Seasonal Pollution
+st.subheader("Seasonal AQI")
 
-city_avg = city_day.groupby("City")["AQI"].mean().reset_index()
+season_avg = filtered.groupby("Season")["AQI"].mean().reset_index()
 
 fig3 = px.bar(
-    city_avg,
-    x="City",
-    y="AQI",
-    title="Average AQI by City"
+    season_avg,
+    x="Season",
+    y="AQI"
 )
 
-st.plotly_chart(fig3)
+st.plotly_chart(fig3, use_container_width=True)
+
+# PM2.5 vs AQI
+st.subheader("PM2.5 vs AQI")
+
+fig4 = px.scatter(
+    filtered,
+    x="PM2.5",
+    y="AQI",
+    color="City"
+)
+
+st.plotly_chart(fig4, use_container_width=True)
+
+# Top polluted cities
+st.subheader("Top Polluted Cities")
+
+top10 = filtered.groupby("City")["AQI"].mean().sort_values(ascending=False).head(10).reset_index()
+
+fig5 = px.bar(
+    top10,
+    x="AQI",
+    y="City",
+    orientation="h"
+)
+
+st.plotly_chart(fig5, use_container_width=True)
+
+# Monthly trend
+st.subheader("Monthly AQI Trend")
+
+monthly = filtered.groupby("Month")["AQI"].mean().reset_index()
+
+fig6 = px.line(
+    monthly,
+    x="Month",
+    y="AQI",
+    markers=True
+)
+
+st.plotly_chart(fig6, use_container_width=True)
+
+# Station level pollution
+st.subheader("Station Level Pollution")
+
+station_city = station_full.groupby("City")["AQI"].mean().sort_values(ascending=False).reset_index()
+
+fig7 = px.bar(
+    station_city,
+    x="City",
+    y="AQI"
+)
+
+st.plotly_chart(fig7, use_container_width=True)
+
+# Top polluted stations
+st.subheader("Top 10 Polluted Stations")
+
+top_stations = station_full.groupby("StationId")["AQI"].mean().sort_values(ascending=False).head(10).reset_index()
+
+fig8 = px.bar(
+    top_stations,
+    x="StationId",
+    y="AQI"
+)
+
+st.plotly_chart(fig8, use_container_width=True)
