@@ -13,12 +13,10 @@ station_full = pd.read_csv("data/clean_station_data.csv")
 city_day["Date"] = pd.to_datetime(city_day["Date"])
 
 # Sidebar filters
-# =========================
-# Sidebar Filters (Interactive)
-# =========================
+
 st.sidebar.header("Filters")
 
-# 1️⃣ City filter (searchable)
+
 cities = st.sidebar.multiselect(
     "Select Cities",
     options=city_day["City"].unique(),
@@ -26,21 +24,21 @@ cities = st.sidebar.multiselect(
     help="Type to search cities"
 )
 
-# 2️⃣ Year filter
+
 years = st.sidebar.multiselect(
     "Select Year(s)",
     sorted(city_day["Year"].unique()),
     default=sorted(city_day["Year"].unique())
 )
 
-# 3️⃣ Season filter
+
 seasons = st.sidebar.multiselect(
     "Select Season(s)",
     city_day["Season"].unique(),
     default=city_day["Season"].unique()
 )
 
-# 4️⃣ AQI range slider
+
 min_aqi, max_aqi = st.sidebar.slider(
     "AQI Range",
     int(city_day["AQI"].min()),
@@ -48,7 +46,7 @@ min_aqi, max_aqi = st.sidebar.slider(
     (int(city_day["AQI"].min()), int(city_day["AQI"].max()))
 )
 
-# Apply all filters
+
 filtered = city_day[
     (city_day["City"].isin(cities)) &
     (city_day["Year"].isin(years)) &
@@ -57,9 +55,9 @@ filtered = city_day[
     (city_day["AQI"] <= max_aqi)
 ]
 
-# =========================
+
 # KPI METRICS
-# =========================
+
 
 st.subheader("Key Metrics")
 
@@ -70,9 +68,9 @@ col2.metric("Max AQI", round(filtered["AQI"].max(), 2))
 col3.metric("Cities", filtered["City"].nunique())
 col4.metric("Total Records", len(filtered))
 
-# =========================
+
 # AQI Trend
-# =========================
+
 
 st.subheader("AQI Trend Over Time")
 
@@ -85,9 +83,9 @@ fig = px.line(
 
 st.plotly_chart(fig, use_container_width=True)
 
-# =========================
+
 # TWO COLUMN LAYOUT
-# =========================
+
 
 col1, col2 = st.columns(2)
 
@@ -117,9 +115,9 @@ with col2:
 
     st.plotly_chart(fig3, use_container_width=True)
 
-# =========================
+
 # SCATTER + MONTHLY
-# =========================
+
 
 col3, col4 = st.columns(2)
 
@@ -151,9 +149,9 @@ with col4:
 
     st.plotly_chart(fig6, use_container_width=True)
 
-# =========================
+
 # TOP POLLUTED CITIES
-# =========================
+
 
 st.subheader("Top Polluted Cities")
 
@@ -168,9 +166,9 @@ fig5 = px.bar(
 
 st.plotly_chart(fig5, use_container_width=True)
 
-# =========================
+
 # STATION ANALYSIS
-# =========================
+
 
 st.subheader("Top Polluted Stations")
 
@@ -185,9 +183,8 @@ fig8 = px.bar(
 st.plotly_chart(fig8, use_container_width=True)
 
 
-# =========================
+
 # CITY AQI MAP
-# =========================
 
 st.subheader("Air Pollution Map (City AQI)")
 
@@ -212,7 +209,7 @@ coords_df = pd.DataFrame.from_dict(
 ).reset_index()
 coords_df.rename(columns={"index": "City"}, inplace=True)
 
-# Prepare map data
+
 map_data = filtered.groupby("City")["AQI"].mean().reset_index()
 map_data = map_data.merge(coords_df, on="City", how="left")
 
@@ -234,4 +231,4 @@ fig_map.update_layout(
     margin={"r":0,"t":0,"l":0,"b":0}
 )
 
-st.plotly_chart(fig_map, width='stretch')  # updated for new Streamlit
+st.plotly_chart(fig_map, width='stretch')  
